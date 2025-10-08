@@ -7,7 +7,7 @@ async function fetchWithAsyncAwait(url) {
     return response.json();
 }
 
-// ========== ОПЕРАЦИИ ИЗ ПУНКТА A (КОЛЛБЭКИ) ==========
+// ========== (КОЛЛБЭКИ) ==========
 
 // a.i. Получить /posts и отсортировать по убыванию длины поля title
 async function getPostsSortedByTitleLengthAsync() {
@@ -57,7 +57,7 @@ async function getIncompleteTodosAsync() {
     }
 }
 
-// ========== ДЕМОНСТРАЦИЯ ВСЕХ ОПЕРАЦИЙ ==========
+// ========== ОПЕРАЦИЙ ==========
 
 async function demonstrateAllAsyncOperations() {
     console.log('=== ВСЕ ОПЕРАЦИИ С ASYNC/AWAIT ===\n');
