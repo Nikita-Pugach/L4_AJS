@@ -1,244 +1,51 @@
-// Общая функция для запросов с async/await
-async function fetchWithAsyncAwait(url) {
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-    }
-    return response.json();
+async function fetchData(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Ошибка: ${response.status}`);
+  }
+  return response.json();
 }
 
-// ========== (КОЛЛБЭКИ) ==========
-
-// a.i. Получить /posts и отсортировать по убыванию длины поля title
-async function getPostsSortedByTitleLengthAsync() {
-    try {
-        const posts = await fetchWithAsyncAwait('https://jsonplaceholder.typicode.com/posts');
-        return posts.sort((a, b) => b.title.length - a.title.length);
-    } catch (error) {
-        throw error;
-    }
+async function getSortedPosts() {
+  const posts = await fetchData("https://jsonplaceholder.typicode.com/posts");
+  return posts.sort((a, b) => b.title.length - a.title.length);
 }
 
-// a.ii. Получить /comments и отсортировать по имени автора
-async function getCommentsSortedByNameAsync() {
-    try {
-        const comments = await fetchWithAsyncAwait('https://jsonplaceholder.typicode.com/comments');
-        return comments.sort((a, b) => a.name.localeCompare(b.name));
-    } catch (error) {
-        throw error;
-    }
+async function getSortedComments() {
+  const comments = await fetchData("https://jsonplaceholder.typicode.com/comments");
+  return comments.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-// ========== ОПЕРАЦИИ ИЗ ПУНКТА B (ПРОМИСЫ) ==========
-
-// b.i. Получить /users и оставить только нужные поля
-async function getUsersWithSelectedFieldsAsync() {
-    try {
-        const users = await fetchWithAsyncAwait('https://jsonplaceholder.typicode.com/users');
-        return users.map(user => ({
-            id: user.id,
-            name: user.name,
-            username: user.username,
-            email: user.email,
-            phone: user.phone
-        }));
-    } catch (error) {
-        throw error;
-    }
+async function getUsersSelectedFields() {
+  const users = await fetchData("https://jsonplaceholder.typicode.com/users");
+  return users.map(u => ({
+    id: u.id,
+    name: u.name,
+    username: u.username,
+    email: u.email,
+    phone: u.phone
+  }));
 }
 
-// b.ii. Получить /todos и отфильтровать по completed === false
-async function getIncompleteTodosAsync() {
-    try {
-        const todos = await fetchWithAsyncAwait('https://jsonplaceholder.typicode.com/todos');
-        return todos.filter(todo => !todo.completed);
-    } catch (error) {
-        throw error;
-    }
+async function getUncompletedTodos() {
+  const todos = await fetchData("https://jsonplaceholder.typicode.com/todos");
+  return todos.filter(t => !t.completed);
 }
 
-// ========== ОПЕРАЦИЙ ==========
+(async () => {
+  try {
+    const posts = await getSortedPosts();
+    console.log(posts.slice(0, 5));
 
-async function demonstrateAllAsyncOperations() {
-    console.log('=== ВСЕ ОПЕРАЦИИ С ASYNC/AWAIT ===\n');
+    const comments = await getSortedComments();
+    console.log(comments.slice(0, 5));
 
-    try {
-        // 1. Операции из пункта A
-        console.log('📝 ОПЕРАЦИИ ИЗ ПУНКТА A:\n');
+    const users = await getUsersSelectedFields();
+    console.log(users);
 
-        // a.i. Posts sorted by title length
-        console.log('a.i. Posts - сортировка по убыванию длины title:');
-        const sortedPosts = await getPostsSortedByTitleLengthAsync();
-        console.log(`✅ Получено posts: ${sortedPosts.length}`);
-        console.log('Топ-3 самых длинных title:');
-        sortedPosts.slice(0, 3).forEach((post, index) => {
-            console.log(`   ${index + 1}. "${post.title}" (${post.title.length} символов)`);
-        });
-        console.log('---\n');
-
-        // a.ii. Comments sorted by name
-        console.log('a.ii. Comments - сортировка по имени автора:');
-        const sortedComments = await getCommentsSortedByNameAsync();
-        console.log(`✅ Получено comments: ${sortedComments.length}`);
-        console.log('Первые 5 авторов по алфавиту:');
-        sortedComments.slice(0, 5).forEach((comment, index) => {
-            console.log(`   ${index + 1}. ${comment.name} (${comment.email})`);
-        });
-        console.log('---\n');
-
-        // 2. Операции из пункта B
-        console.log('📝 ОПЕРАЦИИ ИЗ ПУНКТА B:\n');
-
-        // b.i. Users with selected fields
-        console.log('b.i. Users - только выбранные поля:');
-        const usersWithFields = await getUsersWithSelectedFieldsAsync();
-        console.log(`✅ Получено users: ${usersWithFields.length}`);
-        console.log('Пример пользователя с выбранными полями:');
-        console.log(usersWithFields[0]);
-        console.log('---\n');
-
-        // b.ii. Incomplete todos
-        console.log('b.ii. Todos - только невыполненные задачи:');
-        const incompleteTodos = await getIncompleteTodosAsync();
-        console.log(`✅ Получено невыполненных todos: ${incompleteTodos.length}`);
-        console.log('Примеры невыполненных задач:');
-        incompleteTodos.slice(0, 3).forEach(todo => {
-            console.log(`   - User ${todo.userId}: "${todo.title}"`);
-        });
-        console.log('---\n');
-
-    } catch (error) {
-        console.error('❌ Ошибка при выполнении операций:', error);
-    }
-}
-
-// ========== ПАРАЛЛЕЛЬНОЕ ВЫПОЛНЕНИЕ ==========
-
-async function demonstrateParallelExecution() {
-    console.log('\n⚡ ПАРАЛЛЕЛЬНОЕ ВЫПОЛНЕНИЕ ВСЕХ ЗАПРОСОВ:\n');
-
-    try {
-        // Запускаем все запросы параллельно
-        const [posts, comments, users, todos] = await Promise.all([
-            getPostsSortedByTitleLengthAsync(),
-            getCommentsSortedByNameAsync(),
-            getUsersWithSelectedFieldsAsync(),
-            getIncompleteTodosAsync()
-        ]);
-
-        console.log('✅ Все запросы выполнены параллельно!');
-        console.log(`📊 Результаты:`);
-        console.log(`   - Posts: ${posts.length} записей`);
-        console.log(`   - Comments: ${comments.length} комментариев`);
-        console.log(`   - Users: ${users.length} пользователей`);
-        console.log(`   - Todos: ${todos.length} невыполненных задач`);
-        console.log('---\n');
-
-    } catch (error) {
-        console.error('❌ Ошибка при параллельном выполнении:', error);
-    }
-}
-
-// ========== РАСШИРЕННАЯ ДЕМОНСТРАЦИЯ ==========
-
-async function demonstrateAdvancedAsyncFeatures() {
-    console.log('\n🎯 РАСШИРЕННЫЕ ВОЗМОЖНОСТИ ASYNC/AWAIT:\n');
-
-    try {
-        // Комбинированная операция: пользователь и его невыполненные задачи
-        console.log('1. Комбинированная операция: пользователь и его задачи');
-        const users = await getUsersWithSelectedFieldsAsync();
-        const todos = await getIncompleteTodosAsync();
-        
-        const firstUser = users[0];
-        const userTodos = todos.filter(todo => todo.userId === firstUser.id);
-        
-        console.log(`👤 Пользователь: ${firstUser.name}`);
-        console.log(`📧 Email: ${firstUser.email}`);
-        console.log(`✅ Невыполненных задач: ${userTodos.length}`);
-        userTodos.slice(0, 3).forEach(todo => {
-            console.log(`   - ${todo.title}`);
-        });
-        console.log('---\n');
-
-        // Анализ данных
-        console.log('2. Анализ данных:');
-        
-        // Самый активный автор комментариев
-        const comments = await getCommentsSortedByNameAsync();
-        const commentCountByEmail = {};
-        comments.forEach(comment => {
-            commentCountByEmail[comment.email] = (commentCountByEmail[comment.email] || 0) + 1;
-        });
-        
-        const topCommenter = Object.entries(commentCountByEmail)
-            .sort(([,a], [,b]) => b - a)[0];
-        
-        console.log(`💬 Самый активный комментатор: ${topCommenter[0]} (${topCommenter[1]} комментариев)`);
-        
-        // Статистика по длине заголовков
-        const posts = await getPostsSortedByTitleLengthAsync();
-        const titleLengths = posts.map(post => post.title.length);
-        const avgTitleLength = titleLengths.reduce((a, b) => a + b) / titleLengths.length;
-        
-        console.log(`📏 Средняя длина заголовка: ${avgTitleLength.toFixed(2)} символов`);
-        console.log(`📏 Самый длинный заголовок: ${Math.max(...titleLengths)} символов`);
-        console.log(`📏 Самый короткий заголовок: ${Math.min(...titleLengths)} символов`);
-        console.log('---\n');
-
-    } catch (error) {
-        console.error('❌ Ошибка в расширенной демонстрации:', error);
-    }
-}
-
-// ========== ОБРАБОТКА ОШИБОК ==========
-
-async function demonstrateErrorHandling() {
-    console.log('\n🛡️ ДЕМОНСТРАЦИЯ ОБРАБОТКИ ОШИБОК:\n');
-
-    try {
-        // Попытка запроса к несуществующему URL
-        console.log('Попытка запроса к несуществующему ресурсу...');
-        await fetchWithAsyncAwait('https://jsonplaceholder.typicode.com/nonexistent');
-        
-    } catch (error) {
-        console.log('✅ Ошибка перехвачена:');
-        console.log(`   Сообщение: ${error.message}`);
-    }
-
-    // Демонстрация работы с частичными ошибками
-    console.log('\nРабота с частичными ошибками:');
-    
-    const results = await Promise.allSettled([
-        getPostsSortedByTitleLengthAsync(),
-        fetchWithAsyncAwait('https://invalid-url'),
-        getUsersWithSelectedFieldsAsync(),
-        fetchWithAsyncAwait('https://jsonplaceholder.typicode.com/invalid')
-    ]);
-
-    results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-            console.log(`   ✅ Запрос ${index + 1}: Успех (${result.value.length} элементов)`);
-        } else {
-            console.log(`   ❌ Запрос ${index + 1}: Ошибка - ${result.reason.message}`);
-        }
-    });
-}
-
-// ========== ЗАПУСК ВСЕХ ДЕМОНСТРАЦИЙ ==========
-
-async function runAllDemonstrations() {
-    console.log('🚀 ЗАПУСК ВСЕХ ДЕМОНСТРАЦИЙ ASYNC/AWAIT\n');
-    
-    await demonstrateAllAsyncOperations();
-    await demonstrateParallelExecution();
-    await demonstrateAdvancedAsyncFeatures();
-    await demonstrateErrorHandling();
-    
-    console.log('\n🎉 ВСЕ ДЕМОНСТРАЦИИ ЗАВЕРШЕНЫ!');
-}
-
-// Запускаем все демонстрации
-runAllDemonstrations().catch(error => {
-    console.error('Критическая ошибка:', error);
-});
+    const todos = await getUncompletedTodos();
+    console.log(todos.slice(0, 5));
+  } catch (err) {
+    console.error(err);
+  }
+})();

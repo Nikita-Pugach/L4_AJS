@@ -1,174 +1,32 @@
-// Функция для выполнения GET-запросов с помощью промисов
-function fetchWithPromise(url) {
-    return fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Request failed with status ${response.status}`);
-            }
-            return response.json();
-        });
+function fetchData(url) {
+  return fetch(url).then(response => {
+    if (!response.ok) {
+      throw new Error(`Ошибка: ${response.status}`);
+    }
+    return response.json();
+  });
 }
 
-// 1. Получить /users и оставить только нужные поля
-function getUsersWithSelectedFields() {
-    return fetchWithPromise('https://jsonplaceholder.typicode.com/users')
-        .then(users => {
-            // Оставляем только нужные поля
-            return users.map(user => ({
-                id: user.id,
-                name: user.name,
-                username: user.username,
-                email: user.email,
-                phone: user.phone
-            }));
-        });
+function getUsersSelectedFields() {
+  return fetchData("https://jsonplaceholder.typicode.com/users")
+    .then(users => users.map(u => ({
+      id: u.id,
+      name: u.name,
+      username: u.username,
+      email: u.email,
+      phone: u.phone
+    })));
 }
 
-// 2. Получить /todos и отфильтровать по completed === false
-function getIncompleteTodos() {
-    return fetchWithPromise('https://jsonplaceholder.typicode.com/todos')
-        .then(todos => {
-            // Оставляем только те, где completed === false
-            return todos.filter(todo => !todo.completed);
-        });
+function getUncompletedTodos() {
+  return fetchData("https://jsonplaceholder.typicode.com/todos")
+    .then(todos => todos.filter(t => !t.completed));
 }
 
-// Демонстрация работы функций с промисами
-console.log('=== Начало выполнения с промисами ===\n');
+getUsersSelectedFields()
+  .then(users => console.log(users))
+  .catch(err => console.error(err));
 
-// Тестируем получение users с выбранными полями
-getUsersWithSelectedFields()
-    .then(users => {
-        console.log('1. Users с выбранными полями:');
-        console.log('Всего users:', users.length);
-        console.log('Первые 3 users:');
-        users.slice(0, 3).forEach(user => {
-            console.log(`- ID: ${user.id}, Name: "${user.name}", Username: ${user.username}`);
-            console.log(`  Email: ${user.email}, Phone: ${user.phone}`);
-        });
-        console.log('---');
-    })
-    .catch(error => {
-        console.error('Ошибка при получении users:', error);
-    });
-
-// Тестируем получение невыполненных todos
-getIncompleteTodos()
-    .then(todos => {
-        console.log('2. Невыполненные todos:');
-        console.log('Всего невыполненных задач:', todos.length);
-        console.log('Всего задач должно быть 200, выполненных 100, невыполненных 100');
-        console.log('Первые 5 невыполненных задач:');
-        todos.slice(0, 5).forEach(todo => {
-            console.log(`- ID: ${todo.id}, Title: "${todo.title}"`);
-            console.log(`  User ID: ${todo.userId}, Completed: ${todo.completed}`);
-        });
-        console.log('---');
-    })
-    .catch(error => {
-        console.error('Ошибка при получении todos:', error);
-    });
-
-// Демонстрация цепочки промисов и параллельного выполнения
-function demonstratePromises() {
-    console.log('\n=== Продвинутая работа с промисами ===');
-    
-    // Параллельное выполнение
-    Promise.all([
-        getUsersWithSelectedFields(),
-        getIncompleteTodos()
-    ])
-    .then(([users, todos]) => {
-        console.log('✓ Оба запроса завершены успешно!');
-        console.log(`Получено users: ${users.length}`);
-        console.log(`Получено невыполненных todos: ${todos.length}`);
-        
-        // Демонстрация данных
-        console.log('\nПример пользователя:');
-        console.log(users[0]);
-        
-        console.log('\nПример невыполненной задачи:');
-        console.log(todos[0]);
-    })
-    .catch(error => {
-        console.error('Ошибка в одном из запросов:', error);
-    });
-
-    // Цепочка промисов
-    getUsersWithSelectedFields()
-        .then(users => {
-            console.log('\n✓ Цепочка промисов:');
-            console.log(`Получено пользователей: ${users.length}`);
-            
-            // Найдем пользователя с ID = 1
-            const firstUser = users.find(user => user.id === 1);
-            console.log(`Пользователь с ID=1: ${firstUser.name} (${firstUser.email})`);
-            
-            // Вернем данные для следующего then
-            return firstUser;
-        })
-        .then(firstUser => {
-            console.log(`Работаем с пользователем: ${firstUser.username}`);
-            return getIncompleteTodos();
-        })
-        .then(todos => {
-            // Фильтруем задачи для пользователя с ID = 1
-            const userTodos = todos.filter(todo => todo.userId === 1);
-            console.log(`Невыполненные задачи пользователя ID=1: ${userTodos.length}`);
-            
-            userTodos.slice(0, 3).forEach(todo => {
-                console.log(`  - ${todo.title}`);
-            });
-        })
-        .catch(error => {
-            console.error('Ошибка в цепочке промисов:', error);
-        });
-}
-
-// Запускаем продвинутую демонстрацию через 3 секунды
-setTimeout(demonstratePromises, 3000);
-
-// Дополнительные примеры работы с промисами
-function additionalPromiseExamples() {
-    console.log('\n=== Дополнительные примеры с промисами ===');
-    
-    // Пример с Promise.race - какой запрос выполнится первым
-    const usersPromise = getUsersWithSelectedFields();
-    const todosPromise = getIncompleteTodos();
-    
-    Promise.race([usersPromise, todosPromise])
-        .then(firstResult => {
-            console.log('✓ Первый завершенный запрос:');
-            console.log('Тип данных:', Array.isArray(firstResult) ? 'массив' : typeof firstResult);
-            console.log('Количество элементов:', firstResult.length);
-        })
-        .catch(error => {
-            console.error('Ошибка в Promise.race:', error);
-        });
-    
-    // Пример с обработкой нескольких промисов с разными действиями
-    usersPromise
-        .then(users => {
-            console.log('\n✓ Статистика по пользователям:');
-            const usernameLengths = users.map(user => user.username.length);
-            const avgUsernameLength = usernameLengths.reduce((a, b) => a + b) / usernameLengths.length;
-            console.log(`Средняя длина username: ${avgUsernameLength.toFixed(2)} символов`);
-        });
-    
-    todosPromise
-        .then(todos => {
-            console.log('\n✓ Статистика по задачам:');
-            const todosByUser = {};
-            todos.forEach(todo => {
-                todosByUser[todo.userId] = (todosByUser[todo.userId] || 0) + 1;
-            });
-            
-            console.log('Распределение невыполненных задач по пользователям:');
-            Object.entries(todosByUser).slice(0, 5).forEach(([userId, count]) => {
-                console.log(`  User ${userId}: ${count} задач`);
-            });
-        });
-}
-
-// Запускаем дополнительные примеры через 5 секунд
-setTimeout(additionalPromiseExamples, 5000);
+getUncompletedTodos()
+  .then(todos => console.log(todos))
+  .catch(err => console.error(err));
